@@ -22,6 +22,10 @@ const ALLOW_LIST = new Set<string>([
   "src/lib/supabase/server-only.ts",
   // The firewall test file is allowed to mention the symbol.
   "tests/firewall/service-role-firewall.test.ts",
+  // Server actions that need service-role for writes the policy closes
+  // entirely. Each entry should be paired with a one-line justification
+  // in the file itself naming why RLS was insufficient.
+  "src/lib/workspaces/actions.ts",  // workspace_members.INSERT is `with check (false)`
 ]);
 
 const SCAN_ROOTS = ["src/app", "src/components", "src/lib"];
