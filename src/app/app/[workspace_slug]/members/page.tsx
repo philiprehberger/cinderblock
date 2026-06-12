@@ -4,7 +4,9 @@ import { getWorkspaceBySlug } from "@/lib/workspaces/queries";
 import { listPendingInvitations } from "@/lib/invitations/queries";
 import { inviteMember, revokeInvitation } from "@/lib/invitations/actions";
 import { changeMemberRole, removeMember } from "@/lib/members/actions";
+import { startImpersonation } from "@/lib/impersonation/actions";
 import { getUserEmails } from "@/lib/users/queries";
+import { getImpersonationClaims } from "@/lib/supabase/server";
 
 type MemberRow = {
   role: "owner" | "admin" | "member" | "guest";
@@ -49,8 +51,13 @@ export default async function MembersPage(props: {
   const { error, invited, revoked, changed, removed } = await props.searchParams;
   const workspace = await getWorkspaceBySlug(workspace_slug);
   const currentUser = await getCurrentUser();
+  const impClaims = await getImpersonationClaims();
   const canManage = workspace.role === "owner" || workspace.role === "admin";
   const canPromoteOwner = workspace.role === "owner";
+  // While impersonating, "impersonate again" is disabled — the active session
+  // is already an impersonation context, and nested impersonation isn't a
+  // pattern Cinderblock supports.
+  const canImpersonate = canManage && !impClaims;
 
   const supabase = await createClient();
   const { data: membersData, error: membersError } = await supabase
@@ -184,7 +191,7 @@ export default async function MembersPage(props: {
               return (
                 <li
                   key={m.user_id}
-                  className="grid items-center gap-3 px-4 py-3 text-sm sm:grid-cols-[1fr_auto_auto]"
+                  className="grid items-center gap-3 px-4 py-3 text-sm sm:grid-cols-[1fr_auto_auto_auto]"
                 >
                   <div>
                     <div className="font-medium">
@@ -227,6 +234,21 @@ export default async function MembersPage(props: {
                     <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                       {m.role}
                     </span>
+                  )}
+
+                  {canImpersonate && !isSelf && (m.role !== "owner" || canPromoteOwner) ? (
+                    <form action={startImpersonation}>
+                      <input type="hidden" name="workspace_slug" value={workspace.slug} />
+                      <input type="hidden" name="target_user_id" value={m.user_id} />
+                      <button
+                        type="submit"
+                        className="rounded-md border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                      >
+                        Impersonate
+                      </button>
+                    </form>
+                  ) : (
+                    <span />
                   )}
 
                   {canEditThisRow ? (

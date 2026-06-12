@@ -31,20 +31,27 @@ select is_empty(
 -- ------------------------------------------------------------------
 -- 2) No policy on a public-schema table is `using (true)` or
 --    `with check (true)` — the most common boundary-failure shape.
+--    Role-scoped policies (with a `to <specific_role>` clause that targets
+--    a single non-public role) are allowed to use literal-true because the
+--    role-scoping itself is the gate. Today that's only cb_audit_writer's
+--    INSERT policy.
 -- ------------------------------------------------------------------
 select is_empty(
   $$ select schemaname || '.' || tablename || '.' || policyname as offender
        from pg_policies
       where schemaname = 'public'
         and (
-          -- pg_policies exposes the qual/with_check as text; we look for the
-          -- canonical "true" form. A creative author could write `where 1=1`
-          -- and slip past, but the convention in this repo is `using (...)`
-          -- with a function call.
           qual in ('true', '(true)')
           or with_check in ('true', '(true)')
+        )
+        -- Allow-list: policies that are role-scoped to a non-public role.
+        -- pg_policies.roles is text[]; `public` here means "applies to PUBLIC"
+        -- (the everyone-pseudo-role), which is the dangerous shape.
+        and not (
+          array_length(roles, 1) = 1
+          and roles[1] <> 'public'
         ) $$,
-  'no policy on a public-schema table uses using(true) or with check(true)'
+  'no policy on a public-schema table uses using(true) or with check(true) without role-scoping'
 );
 
 -- ------------------------------------------------------------------

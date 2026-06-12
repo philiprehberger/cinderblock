@@ -29,6 +29,8 @@ const ALLOW_LIST = new Set<string>([
   "src/lib/invitations/actions.ts", // workspace_invitations.UPDATE policy is closed; revoke + accept need service-role
   "src/lib/users/queries.ts",       // auth.users is invisible to non-service roles; emails resolved batch-wise
   "src/lib/members/actions.ts",     // role-change + remove cross the admin-only policy via service-role with audit
+  "src/lib/impersonation/actions.ts", // step_up_codes has no user-role access; impersonation flow runs entirely as service-role
+  "src/lib/auth/session.ts",          // impersonation-aware getCurrentUser looks up auth.users for the impersonated identity
 ]);
 
 const SCAN_ROOTS = ["src/app", "src/components", "src/lib"];

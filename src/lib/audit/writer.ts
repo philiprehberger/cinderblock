@@ -3,7 +3,7 @@ import "server-only";
 import postgres from "postgres";
 import { headers } from "next/headers";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getImpersonationClaims } from "@/lib/supabase/server";
 import { validateActor, type AuditActor } from "./actor-guard";
 
 export { validateActor, type AuditActor };
@@ -45,33 +45,30 @@ export type AuditLogInput = {
   diff?: Record<string, unknown> | null;
 };
 
-// Resolves the current actor from the Supabase session. The impersonation
-// path (60-min JWT with aud='impersonation') will land here once Phase 4
-// wires the impersonation cookie middleware.
+// Resolves the current actor. The impersonation path is the *first* check:
+// when cb_impersonate is set, the JWT's sub is the apparent actor and
+// app_metadata.impersonated_by is the admin who initiated it. This makes
+// audit_events rows show both IDs without any per-call-site plumbing.
+//
+// When no impersonation is active, fall back to the normal session.
 export async function getCurrentActor(): Promise<AuditActor | null> {
+  const impClaims = await getImpersonationClaims();
+  if (impClaims) {
+    return validateActor({
+      actorId: impClaims.sub,
+      impersonatorId: impClaims.impersonatedBy,
+      jwtAud: "impersonation",
+    });
+  }
+
   const supabase = await createClient();
   const { data: session } = await supabase.auth.getSession();
   if (!session.session?.user?.id) return null;
 
-  // The Supabase JS client exposes app_metadata via session.user. The
-  // impersonator_id and aud come from the JWT's app_metadata claims set
-  // by the impersonation server action.
-  const user = session.session.user;
-  const appMeta = (user.app_metadata ?? {}) as {
-    impersonated_by?: string;
-    aud?: string;
-  };
-
-  // The `aud` JWT claim is also exposed by Supabase as a separate field on
-  // the session token. We read it from the decoded session if available;
-  // fall back to app_metadata.aud which is the convention Cinderblock's
-  // impersonation server action uses.
-  const jwtAud = appMeta.aud ?? null;
-
   return validateActor({
-    actorId: user.id,
-    impersonatorId: appMeta.impersonated_by ?? null,
-    jwtAud,
+    actorId: session.session.user.id,
+    impersonatorId: null,
+    jwtAud: "authenticated",
   });
 }
 
