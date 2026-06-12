@@ -169,6 +169,16 @@ Deno.serve(async (request) => {
         break;
       }
 
+      case "customer.subscription.trial_will_end": {
+        // Stripe fires this ~3 days before trial end. Cinderblock doesn't
+        // change state here — the trial banner reads trial_ends_at directly
+        // from the subscriptions row, which gets refreshed by the next
+        // customer.subscription.updated. The branch exists so the event
+        // doesn't fall to the default 'ack' path silently.
+        handled = true;
+        break;
+      }
+
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
         const customerId =
