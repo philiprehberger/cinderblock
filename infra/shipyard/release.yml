@@ -1,0 +1,42 @@
+# Cinderblock — Shipyard release definition.
+#
+# Shipyard does atomic-symlink-flip deploys: build locally, ship the
+# standalone-output tree, swap /var/www/cinderblock -> releases/<ts>/.
+# Failed deploys roll back automatically; successful ones leave the last
+# N releases for rapid rollback.
+#
+# Invocation:
+#   shipyard release cinderblock --target prod
+
+name: cinderblock
+target: prod
+
+build:
+  command: |
+    npm ci
+    npm run build
+    # Standalone output bundles server.js + .next/ + node_modules into a
+    # single tree under .next/standalone. Copy public/ + static/ in so the
+    # tree is a complete deploy.
+    cp -r public .next/standalone/public
+    cp -r .next/static .next/standalone/.next/static
+  artifact: .next/standalone
+
+deploy:
+  host: 54.190.150.0
+  user: ubuntu
+  ssh_key: ~/.ssh/ps4_new
+  remote_root: /var/www/cinderblock
+  keep_releases: 5
+  shared_paths:
+    - .env
+
+post_deploy:
+  - bash -lc 'pm2 reload cinderblock'
+  - sudo systemctl reload apache2
+
+health_check:
+  url: https://cinderblock.philiprehberger.com
+  expect_status: 200
+  retries: 10
+  delay_seconds: 3

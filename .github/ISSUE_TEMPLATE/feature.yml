@@ -1,0 +1,25 @@
+name: Feature
+description: Propose a new capability or extension.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What's currently hard or impossible? Concrete scenario, not aspirational framing.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What you'd do. Include the policy/test/UI changes that would land.
+    validations:
+      required: true
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Trade-offs
+      description: What would this make worse, and how do you propose to handle that?
+    validations:
+      required: true

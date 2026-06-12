@@ -1,0 +1,33 @@
+name: Bug
+description: Something doesn't behave as documented.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Concrete description. Lead with the failing observation, not the inferred cause.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: Cite the doc page or test that codifies the expected behaviour.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: |
+        Step-by-step. If it's a policy issue, include the pgtap test snippet
+        that would catch it. If it's a UI issue, include the route + role.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Cinderblock commit / version
+    validations:
+      required: true
