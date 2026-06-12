@@ -31,6 +31,18 @@ touch "$ENV_FILE"
 existing_audit_url="$(grep -E '^PG_AUDIT_WRITER_URL=' "$ENV_FILE" | head -1 | cut -d= -f2- || true)"
 existing_imp_url="$(grep -E '^PG_IMPERSONATOR_URL=' "$ENV_FILE" | head -1 | cut -d= -f2- || true)"
 
+# Pass --rotate to force regenerate even when URLs already exist. Useful
+# after `supabase db reset` which wipes the role passwords but doesn't
+# touch .env.local.
+if [ "${1:-}" = "--rotate" ]; then
+  echo "Forcing rotation (--rotate passed)..."
+  existing_audit_url=""
+  existing_imp_url=""
+  # Strip the existing entries so the append doesn't double them.
+  grep -v -E '^PG_AUDIT_WRITER_URL=|^PG_IMPERSONATOR_URL=' "$ENV_FILE" > "$ENV_FILE.tmp"
+  mv "$ENV_FILE.tmp" "$ENV_FILE"
+fi
+
 gen_password() {
   # 32 url-safe base64 chars from /dev/urandom. No `+/` to keep the connection
   # string URL-safe without percent-encoding.

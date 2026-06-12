@@ -56,6 +56,10 @@ $$;
 -- Test fixture user. The minimum auth.users insert needed to satisfy FK
 -- references from workspaces.created_by etc. Real fixtures (5 workspaces × 8
 -- users) land in Phase 2; this is the bare minimum the meta-test needs.
+-- Note: the GoTrue admin /users API crashes if any of the *_token columns
+-- on auth.users are NULL ("converting NULL to string is unsupported"). Set
+-- them to empty strings explicitly even though they have no semantic meaning
+-- for a verified test user.
 insert into auth.users (
   id,
   instance_id,
@@ -66,7 +70,12 @@ insert into auth.users (
   raw_app_meta_data,
   raw_user_meta_data,
   created_at,
-  updated_at
+  updated_at,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change_token_current,
+  reauthentication_token
 ) values (
   '00000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000000',
@@ -77,8 +86,23 @@ insert into auth.users (
   '{"provider":"email","providers":["email"]}'::jsonb,
   '{}'::jsonb,
   now(),
-  now()
+  now(),
+  '',
+  '',
+  '',
+  '',
+  ''
 ) on conflict (id) do nothing;
+
+-- Belt-and-suspenders: empty every nullable string column GoTrue scans.
+update auth.users
+   set confirmation_token = coalesce(confirmation_token, ''),
+       recovery_token = coalesce(recovery_token, ''),
+       email_change_token_new = coalesce(email_change_token_new, ''),
+       email_change = coalesce(email_change, ''),
+       email_change_token_current = coalesce(email_change_token_current, ''),
+       reauthentication_token = coalesce(reauthentication_token, '')
+ where id = '00000000-0000-0000-0000-000000000001';
 
 -- pg_prove (the runner behind `supabase test db`) treats every file in
 -- tests/ as a TAP-producing test, and pgtap's finish() raises when zero

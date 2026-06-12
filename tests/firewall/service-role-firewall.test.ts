@@ -26,6 +26,7 @@ const ALLOW_LIST = new Set<string>([
   // entirely. Each entry should be paired with a one-line justification
   // in the file itself naming why RLS was insufficient.
   "src/lib/workspaces/actions.ts",  // workspace_members.INSERT is `with check (false)`
+  "src/lib/invitations/actions.ts", // workspace_invitations.UPDATE policy is closed; revoke + accept need service-role
 ]);
 
 const SCAN_ROOTS = ["src/app", "src/components", "src/lib"];

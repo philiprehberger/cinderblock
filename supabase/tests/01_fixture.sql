@@ -13,17 +13,32 @@
 
 insert into auth.users (
   id, instance_id, aud, role, email, email_confirmed_at,
-  raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token,
+  email_change_token_new, email_change_token_current, reauthentication_token
 ) values
-  ('aaaa1111-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'alice@example.test',   now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
-  ('aaaa1111-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'bob@example.test',     now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
-  ('aaaa1111-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'carol@example.test',   now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
-  ('aaaa1111-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dave@example.test',    now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
-  ('aaaa1111-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'eve@example.test',     now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
-  ('aaaa1111-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'frank@example.test',   now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
-  ('aaaa1111-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'grace@example.test',   now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
-  ('aaaa1111-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'hostile@example.test', now(), '{"provider":"email","providers":["email"]}', '{}', now(), now())
+  ('aaaa1111-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'alice@example.test',   now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', ''),
+  ('aaaa1111-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'bob@example.test',     now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', ''),
+  ('aaaa1111-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'carol@example.test',   now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', ''),
+  ('aaaa1111-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dave@example.test',    now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', ''),
+  ('aaaa1111-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'eve@example.test',     now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', ''),
+  ('aaaa1111-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'frank@example.test',   now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', ''),
+  ('aaaa1111-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'grace@example.test',   now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', ''),
+  ('aaaa1111-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'hostile@example.test', now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '', '')
 on conflict (id) do nothing;
+
+-- GoTrue's /admin/users endpoint scans every string column on auth.users and
+-- crashes on NULL ("converting NULL to string is unsupported"). Pgtap inserts
+-- bypass GoTrue's normalization, so we have to do it ourselves for every
+-- string column that defaults to NULL.
+update auth.users
+   set confirmation_token = coalesce(confirmation_token, ''),
+       recovery_token = coalesce(recovery_token, ''),
+       email_change_token_new = coalesce(email_change_token_new, ''),
+       email_change = coalesce(email_change, ''),
+       email_change_token_current = coalesce(email_change_token_current, ''),
+       reauthentication_token = coalesce(reauthentication_token, '')
+ where id::text like 'aaaa1111-%';
 
 -- ---------- WORKSPACES ----------
 -- created_by uses alice for acme, eve for bigco, etc. — pick any active member.
