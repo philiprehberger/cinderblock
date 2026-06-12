@@ -44,3 +44,26 @@ jobs:
       - name: Stop the stack
         if: always()
         run: npx supabase stop
+
+  e2e:
+    name: Playwright — public-routes smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+      - name: Build + start the dev server
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+        run: |
+          npm run build
+          npm start &
+          for i in {1..30}; do curl -fs http://localhost:3000 && break || sleep 2; done
+      - name: Run e2e (public-routes only — cross-tenant needs full stack)
+        run: npx playwright test e2e/public-routes.spec.ts
