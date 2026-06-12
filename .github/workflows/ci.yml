@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  next-side:
+    name: Next.js — typecheck + lint + vitest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm test
+
+  pgtap:
+    name: Supabase — pgtap (~74 tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Cache Supabase Docker images
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/supabase
+          key: supabase-cli-${{ hashFiles('package-lock.json') }}
+      - run: npm ci
+      - name: Start local Supabase stack
+        run: npx supabase start
+        timeout-minutes: 15
+      - name: Run pgtap suite
+        run: npx supabase test db
+      - name: Stop the stack
+        if: always()
+        run: npx supabase stop
