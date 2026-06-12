@@ -42,6 +42,14 @@ export default async function WorkspaceLayout(props: {
         >
           Audit log
         </Link>
+        {workspace.role === "owner" ? (
+          <Link
+            href={`/app/${workspace.slug}/billing`}
+            className="border-b-2 border-transparent px-1 pb-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          >
+            Billing
+          </Link>
+        ) : null}
       </nav>
 
       {props.children}

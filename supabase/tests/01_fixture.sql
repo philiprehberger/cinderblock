@@ -51,6 +51,17 @@ insert into public.workspaces (id, slug, name, created_by, billing_email) values
   ('bbbb2222-0000-0000-0000-000000000005', 'archived',  'Archived Co',     'aaaa1111-0000-0000-0000-000000000001', 'billing@archived.test')
 on conflict (id) do nothing;
 
+-- ---------- SUBSCRIPTIONS (seeded before members so the seat-cap trigger
+--             from migration 0100 sees the right cap when the multi-row
+--             member insert fires per-row at end of statement) ----------
+
+insert into public.subscriptions (workspace_id, stripe_customer_id, stripe_subscription_id, status, plan, seats, current_period_end) values
+  ('bbbb2222-0000-0000-0000-000000000001', 'cus_acme_test',     'sub_acme_test',     'active',   'team', 10, now() + interval '20 days'),
+  ('bbbb2222-0000-0000-0000-000000000002', 'cus_bigco_test',    'sub_bigco_test',    'trialing', 'business', 50, now() + interval '5 days'),
+  ('bbbb2222-0000-0000-0000-000000000003', 'cus_solo_test',     'sub_solo_test',     'past_due', 'team', 10, now() - interval '10 days'),
+  ('bbbb2222-0000-0000-0000-000000000004', 'cus_holdings_test', 'sub_holdings_test', 'canceled', 'business', 50, now() - interval '30 days')
+on conflict (workspace_id) do nothing;
+
 -- ---------- MEMBERSHIPS ----------
 --             acme    bigco   solo-co  holdings  archived
 -- alice@      owner   member  -        -         owner
@@ -138,14 +149,9 @@ insert into public.workspace_invitations (id, workspace_id, email, role, invited
   ('eeee5555-0000-0000-0001-000000000003', 'bbbb2222-0000-0000-0000-000000000001', 'accepted@example.test',  'member', 'aaaa1111-0000-0000-0000-000000000001', decode('00','hex')::bytea || gen_random_bytes(31), now() - interval '1 day', now() - interval '2 days', 'aaaa1111-0000-0000-0000-000000000007')
 on conflict (id) do nothing;
 
--- ---------- SUBSCRIPTIONS ----------
-
-insert into public.subscriptions (workspace_id, stripe_customer_id, stripe_subscription_id, status, plan, seats, current_period_end) values
-  ('bbbb2222-0000-0000-0000-000000000001', 'cus_acme_test',     'sub_acme_test',     'active',   'team', 10, now() + interval '20 days'),
-  ('bbbb2222-0000-0000-0000-000000000002', 'cus_bigco_test',    'sub_bigco_test',    'trialing', 'business', 50, now() + interval '5 days'),
-  ('bbbb2222-0000-0000-0000-000000000003', 'cus_solo_test',     'sub_solo_test',     'past_due', 'team', 10, now() - interval '10 days'),
-  ('bbbb2222-0000-0000-0000-000000000004', 'cus_holdings_test', 'sub_holdings_test', 'canceled', 'business', 50, now() - interval '30 days')
-on conflict (workspace_id) do nothing;
+-- (Subscriptions are now seeded earlier so the seat-cap trigger sees the
+-- correct plan when the multi-row member insert fires per-row at end of
+-- statement.)
 
 -- ---------- SOFT-DELETE archived workspace LAST ----------
 -- (so the membership row for alice still exists for the "removed-from-archived" tests).
