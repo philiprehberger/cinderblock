@@ -1,0 +1,18 @@
+/home/ubuntu/projects/cinderblock/supabase/tests/00_setup.sql ..................... ok
+/home/ubuntu/projects/cinderblock/supabase/tests/01_fixture.sql ................... ok
+/home/ubuntu/projects/cinderblock/supabase/tests/02_cross_tenant_read.sql ......... ok
+/home/ubuntu/projects/cinderblock/supabase/tests/03_cross_tenant_write.sql ........ ok
+/home/ubuntu/projects/cinderblock/supabase/tests/04_join_leakage.sql .............. ok
+/home/ubuntu/projects/cinderblock/supabase/tests/05_security_definer.sql .......... ok
+/home/ubuntu/projects/cinderblock/supabase/tests/06_audit_integrity.sql ........... ok
+/home/ubuntu/projects/cinderblock/supabase/tests/07_service_role.sql .............. ok
+/home/ubuntu/projects/cinderblock/supabase/tests/08_harness_meta.sql .............. ok
+/home/ubuntu/projects/cinderblock/supabase/tests/09_pool_safety.sql ............... ok
+/home/ubuntu/projects/cinderblock/supabase/tests/10_concurrency.sql ............... ok
+/home/ubuntu/projects/cinderblock/supabase/tests/11_impersonation_visibility.sql .. ok
+/home/ubuntu/projects/cinderblock/supabase/tests/12_billing.sql ................... ok
+/home/ubuntu/projects/cinderblock/supabase/tests/13_tasks.sql ..................... ok
+/home/ubuntu/projects/cinderblock/supabase/tests/14_invitations.sql ............... ok
+All tests successful.
+Files=15, Tests=74,  0 wallclock secs ( 0.04 usr  0.01 sys +  0.13 cusr  0.05 csys =  0.23 CPU)
+Result: PASS

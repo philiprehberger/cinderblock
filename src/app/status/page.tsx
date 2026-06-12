@@ -24,10 +24,15 @@ async function runChecks(): Promise<Check[]> {
       const res = await fetch(`${url}/auth/v1/settings`, {
         next: { revalidate: 60 },
       });
+      // /auth/v1/settings requires an apikey; we deliberately don't send
+      // one. A reachable Auth server returns 200 (some configurations) or
+      // 401 (most); both prove the service is up. Only 5xx / network
+      // failures count as down.
+      const reachable = res.status === 200 || res.status === 401;
       checks.push({
         name: "Supabase Auth reachable",
-        ok: res.ok,
-        detail: `HTTP ${res.status}`,
+        ok: reachable,
+        detail: `HTTP ${res.status}${res.status === 401 ? " (expected — no apikey sent)" : ""}`,
       });
     }
   } catch (err) {

@@ -2,8 +2,8 @@
 // /var/www/ecosystem.config.js on the EC2 host (don't replace the file —
 // it manages every Next.js demo on the host).
 //
-// Port assignment: 3010 per the .guides/new_demo_project.md table at the
-// time of writing. Re-check before installing — 3011+ may also be free.
+// Port assignment: 3015 (verified free on EC2 2026-06-12; 3000-3014 all
+// taken by sibling demos).
 
 module.exports = {
   name: "cinderblock",
@@ -13,6 +13,6 @@ module.exports = {
   max_memory_restart: "500M",
   env: {
     NODE_ENV: "production",
-    PORT: 3010,
+    PORT: 3015,
   },
 };
