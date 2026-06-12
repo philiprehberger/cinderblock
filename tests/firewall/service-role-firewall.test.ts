@@ -27,6 +27,8 @@ const ALLOW_LIST = new Set<string>([
   // in the file itself naming why RLS was insufficient.
   "src/lib/workspaces/actions.ts",  // workspace_members.INSERT is `with check (false)`
   "src/lib/invitations/actions.ts", // workspace_invitations.UPDATE policy is closed; revoke + accept need service-role
+  "src/lib/users/queries.ts",       // auth.users is invisible to non-service roles; emails resolved batch-wise
+  "src/lib/members/actions.ts",     // role-change + remove cross the admin-only policy via service-role with audit
 ]);
 
 const SCAN_ROOTS = ["src/app", "src/components", "src/lib"];

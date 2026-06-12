@@ -26,7 +26,7 @@ export default async function WorkspaceLayout(props: {
       <nav className="mb-6 flex gap-4 border-b border-zinc-200 text-sm dark:border-zinc-800">
         <Link
           href={`/app/${workspace.slug}`}
-          className="border-b-2 border-zinc-900 px-1 pb-2 font-medium text-zinc-900 dark:border-white dark:text-white"
+          className="border-b-2 border-transparent px-1 pb-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
         >
           Tasks
         </Link>
@@ -35,6 +35,12 @@ export default async function WorkspaceLayout(props: {
           className="border-b-2 border-transparent px-1 pb-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
         >
           Members
+        </Link>
+        <Link
+          href={`/app/${workspace.slug}/audit`}
+          className="border-b-2 border-transparent px-1 pb-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+        >
+          Audit log
         </Link>
       </nav>
 
