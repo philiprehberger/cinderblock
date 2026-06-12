@@ -1,6 +1,24 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+// Supabase Auth strips the callback path when the redirect_to isn't matched
+// by the project's Redirect URLs allow-list — in practice that lands the
+// OAuth code at `/?code=...` instead of `/auth/callback?code=...`. We
+// forward it through here so the flow survives any Supabase wildcard
+// quirks. Same handling for `?error=`.
+export default async function Home(props: {
+  searchParams?: Promise<{ code?: string; error?: string; error_description?: string }>;
+}) {
+  const sp = (await props.searchParams) ?? {};
+  if (sp.code) {
+    redirect(`/auth/callback?code=${encodeURIComponent(sp.code)}`);
+  }
+  if (sp.error) {
+    redirect(
+      `/signin?error=${encodeURIComponent(sp.error_description ?? sp.error)}`,
+    );
+  }
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
@@ -52,7 +70,7 @@ export default function Home() {
           <h2 className="text-xl font-semibold">What's in the box</h2>
           <ul className="mt-4 grid grid-cols-1 gap-3 text-sm leading-6 text-zinc-700 dark:text-zinc-300 sm:grid-cols-2">
             <li>Workspace + member + role data model</li>
-            <li>~45 pgtap policy tests against a 5×8 hostile fixture</li>
+            <li>74 pgtap policy tests against a 5×8 hostile fixture</li>
             <li>Magic-link auth + TOTP MFA for owners</li>
             <li>Admin impersonation with 60-min server-minted JWT</li>
             <li>Append-only audit log via a single-purpose Postgres role</li>
