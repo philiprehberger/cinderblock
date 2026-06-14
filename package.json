@@ -16,7 +16,10 @@
     "supabase:reset": "supabase db reset",
     "supabase:test": "supabase test db",
     "supabase:status": "supabase status",
-    "postclone": "./scripts/postclone.sh"
+    "postclone": "./scripts/postclone.sh",
+    "viberaven:gate": "npx -y viberaven --agent-mode",
+    "viberaven:verify": "npx -y viberaven --verify",
+    "viberaven:strict": "npx -y viberaven --strict"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
