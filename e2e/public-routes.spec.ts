@@ -14,7 +14,7 @@ test("signin page renders the email form", async ({ page }) => {
   await page.goto("/signin");
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await expect(page.getByLabel("Email")).toBeVisible();
-  await expect(page.getByRole("button", { name: /Send sign-in link/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Send sign-in code/i })).toBeVisible();
 });
 
 test("/app redirects to /signin when not authenticated", async ({ page }) => {
