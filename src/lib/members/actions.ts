@@ -7,6 +7,7 @@ import { requireAuth } from "@/lib/auth/session";
 import { createServiceRoleClient } from "@/lib/supabase/server-only";
 import { auditLog } from "@/lib/audit/writer";
 import { getWorkspaceBySlug } from "@/lib/workspaces/queries";
+import { requireOwnerMfa } from "@/lib/mfa/gate";
 
 // Role-precedence rules enforced at the app layer (RLS policies are too
 // coarse-grained to express them cleanly):
@@ -39,6 +40,8 @@ export async function changeMemberRole(formData: FormData): Promise<void> {
   if (workspace.role !== "owner" && workspace.role !== "admin") {
     backWithError(slug, "not_admin");
   }
+
+  await requireOwnerMfa(user.id, "role_change", `/app/${slug}/members`);
 
   // Look up the target's current role to enforce role-precedence.
   const service = createServiceRoleClient();
@@ -110,6 +113,8 @@ export async function removeMember(formData: FormData): Promise<void> {
   if (workspace.role !== "owner" && workspace.role !== "admin") {
     backWithError(slug, "not_admin");
   }
+
+  await requireOwnerMfa(user.id, "member_removal", `/app/${slug}/members`);
 
   const service = createServiceRoleClient();
   const { data: target } = await service

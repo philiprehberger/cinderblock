@@ -10,7 +10,11 @@ type PolicyRow = {
   with_check: string | null;
 };
 
-export const dynamic = "force-dynamic";
+// Policies change only when migrations run. ISR with hourly revalidation
+// keeps the page in Next.js's static cache (no per-request DB hit, no
+// `cache-control: no-store` on the response — so the back/forward cache
+// can restore it). A migration deploy invalidates the build cache anyway.
+export const revalidate = 3600;
 
 async function loadPolicies(): Promise<PolicyRow[]> {
   const service = createServiceRoleClient();

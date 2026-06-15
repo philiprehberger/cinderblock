@@ -62,6 +62,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <span className="hidden text-zinc-600 dark:text-zinc-400 sm:inline">
               {user.email}
             </span>
+            <Link
+              href="/app/settings/mfa"
+              className="rounded-md border border-zinc-300 px-3 py-1 text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            >
+              Settings
+            </Link>
             <form action="/signout" method="post">
               <button
                 type="submit"

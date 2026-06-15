@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { requireAuth } from "@/lib/auth/session";
+import { requireOwnerMfa } from "@/lib/mfa/gate";
 import { createServiceRoleClient } from "@/lib/supabase/server-only";
 import { IMPERSONATION_COOKIE } from "@/lib/supabase/server";
 import { auditLog } from "@/lib/audit/writer";
@@ -82,6 +83,12 @@ export async function startImpersonation(formData: FormData): Promise<void> {
   if (workspace.role !== "owner" && workspace.role !== "admin") {
     backWithError(slug, targetUserId, "not_admin");
   }
+
+  await requireOwnerMfa(
+    admin.id,
+    "impersonation",
+    `/app/${slug}/members`,
+  );
 
   const service = createServiceRoleClient();
   const { data: target } = await service

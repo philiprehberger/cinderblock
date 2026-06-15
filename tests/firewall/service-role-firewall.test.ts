@@ -32,6 +32,9 @@ const ALLOW_LIST = new Set<string>([
   "src/lib/impersonation/actions.ts", // step_up_codes has no user-role access; impersonation flow runs entirely as service-role
   "src/lib/auth/session.ts",          // impersonation-aware getCurrentUser looks up auth.users for the impersonated identity
   "src/lib/billing/actions.ts",       // subscriptions.UPDATE is closed; Checkout/Portal flows need service-role + audit
+  "src/lib/mfa/gate.ts",              // auth.admin.getUserById needs service-role; user.factors[] is the gate's source of truth
+  "src/lib/mfa/queries.ts",           // userHoldsAnyOwnerRole crosses workspaces — service-role avoids RLS noise on a global check
+  "src/lib/mfa/actions.ts",           // owned-workspaces lookup + per-workspace audit fan-out runs as service-role
   "src/app/docs/security/policies/page.tsx", // reads pg_policies via the public v_public_policies view
   "src/app/print/policies/page.tsx",         // print-friendly mirror of the policy viewer; same v_public_policies read
 ]);

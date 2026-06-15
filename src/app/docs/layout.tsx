@@ -84,9 +84,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           ))}
         </aside>
 
-        <article className="prose prose-zinc max-w-none dark:prose-invert prose-pre:bg-zinc-100 prose-pre:text-zinc-900 dark:prose-pre:bg-zinc-900 dark:prose-pre:text-zinc-100 prose-code:font-mono">
+        <main className="prose prose-zinc max-w-none dark:prose-invert prose-pre:bg-zinc-100 prose-pre:text-zinc-900 dark:prose-pre:bg-zinc-900 dark:prose-pre:text-zinc-100 prose-code:font-mono">
           {children}
-        </article>
+        </main>
       </div>
     </div>
   );

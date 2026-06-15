@@ -14,9 +14,13 @@ import { expect, test } from "@playwright/test";
 
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
+// Playwright 1.60 + Node 25 don't reliably resolve `import.meta.url` inside
+// transformed test modules. Read .env.local relative to cwd instead — the
+// dev server is always launched from the repo root, so this is stable.
 const env = Object.fromEntries(
-  readFileSync(new URL("../.env.local", import.meta.url).pathname, "utf-8")
+  readFileSync(resolve(process.cwd(), ".env.local"), "utf-8")
     .split("\n")
     .filter((l) => l && !l.startsWith("#"))
     .map((l) => {
@@ -28,8 +32,13 @@ const env = Object.fromEntries(
 const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_KEY = env.SUPABASE_SERVICE_ROLE_KEY!;
 
-// Mint a session token for the given user_id via the Supabase Auth admin
-// `generateLink` flow, then exchange it on the dev server's auth callback.
+// Mint a session for the given user via the Supabase Auth admin
+// generateLink flow. The action_link goes through GoTrue's /auth/v1/verify
+// which returns the session via #access_token in the URL hash — a path the
+// /auth/callback route doesn't handle (it expects ?code= from a PKCE flow).
+// The /signin page's verifyEmailLink server action extracts the token_hash
+// from the link text and calls supabase.auth.verifyOtp directly, which sets
+// the session cookie server-side. Tested working with Playwright 1.60.
 async function signInAs(page: Parameters<Parameters<typeof test>[1]>[0]["page"], email: string): Promise<void> {
   const service = createClient(SUPABASE_URL, SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -42,8 +51,11 @@ async function signInAs(page: Parameters<Parameters<typeof test>[1]>[0]["page"],
   if (error || !data?.properties?.action_link) {
     throw new Error(`generateLink failed: ${error?.message ?? "no link"}`);
   }
-  await page.goto(data.properties.action_link);
-  // The auth callback redirects to /app on success.
+
+  await page.goto(`/signin?sent=${encodeURIComponent(email)}`);
+  await page.getByText("Email doesn't show a code? Paste the link instead.").click();
+  await page.locator('textarea[name="link"]').fill(data.properties.action_link);
+  await page.getByRole("button", { name: "Verify from link" }).click();
   await page.waitForURL((url) => url.pathname.startsWith("/app"));
 }
 

@@ -8,6 +8,7 @@ import { getStripe } from "@/lib/stripe/client";
 import { stripePriceForPlan, type PlanId } from "@/lib/stripe/catalog";
 import { auditLog } from "@/lib/audit/writer";
 import { getWorkspaceBySlug } from "@/lib/workspaces/queries";
+import { requireOwnerMfa } from "@/lib/mfa/gate";
 
 // startCheckout — creates a Stripe Checkout Session for the chosen paid plan
 // and redirects the owner to Stripe's hosted page. The webhook updates the
@@ -35,6 +36,8 @@ export async function startCheckout(formData: FormData): Promise<void> {
   if (workspace.role !== "owner") {
     backToBilling(slug, "owner_only");
   }
+
+  await requireOwnerMfa(user.id, "billing", `/app/${slug}/billing`);
 
   const stripe = getStripe();
   if (!stripe) {
@@ -108,7 +111,7 @@ export async function startCheckout(formData: FormData): Promise<void> {
 }
 
 export async function openCustomerPortal(formData: FormData): Promise<void> {
-  await requireAuth();
+  const user = await requireAuth();
   const slug = String(formData.get("workspace_slug") ?? "");
   if (!slug) redirect("/app");
 
@@ -116,6 +119,8 @@ export async function openCustomerPortal(formData: FormData): Promise<void> {
   if (workspace.role !== "owner") {
     backToBilling(slug, "owner_only");
   }
+
+  await requireOwnerMfa(user.id, "billing", `/app/${slug}/billing`);
 
   const stripe = getStripe();
   if (!stripe) {
