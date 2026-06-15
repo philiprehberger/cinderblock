@@ -50,22 +50,39 @@ export default function PolicyCostDocs() {
 
       <h2>The scale fixture</h2>
       <p>
-        A separate opt-in test set (<code>supabase test db --tag scale</code>,
-        nightly on main) seeds a 100k-task workspace with 1k members and
-        asserts:
+        A separate opt-in suite lives in{" "}
+        <code>supabase/tests/scale/</code> — invoked nightly on main via{" "}
+        <code>.github/workflows/scale.yml</code>, or locally as:
+      </p>
+      <pre>
+        <code>{`npx supabase test db \\
+  supabase/tests/scale/01_fixture.sql \\
+  supabase/tests/scale/02_policy_cost.sql`}</code>
+      </pre>
+      <p>
+        It seeds 50 workspaces × ~20 members × 2,000 tasks each
+        (~100,000 tasks, ~1,000 memberships) and asserts:
       </p>
       <ul>
         <li>
-          <code>select * from tasks where workspace_id = $1 limit 50</code>{" "}
-          returns in &lt; 50 ms p95.
+          An outsider with zero memberships still reads zero of the
+          100k scale tasks — the cross-tenant boundary holds at scale,
+          not just against the 15-task hostile fixture.
         </li>
         <li>
-          The query plan uses the partial index on{" "}
-          <code>workspace_members</code> and the{" "}
-          <code>(workspace_id, status)</code> index on tasks — no seq scan
-          on either.
+          <code>EXPLAIN</code> of{" "}
+          <code>select * from tasks where workspace_id = $1 and status = &apos;todo&apos; limit 50</code>{" "}
+          shows the <code>tasks</code> node is an index scan, not a
+          Seq Scan — proving the <code>(workspace_id, status)</code>{" "}
+          index survives the policy&apos;s{" "}
+          <code>is_workspace_member()</code> rewrite.
         </li>
       </ul>
+      <p>
+        The suite is kept off per-PR CI because the fixture seed adds
+        ~30s and the volume is the point — flaky timings would punish
+        unrelated PRs.
+      </p>
     </>
   );
 }

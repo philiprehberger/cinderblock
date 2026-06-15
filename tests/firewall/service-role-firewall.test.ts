@@ -33,6 +33,7 @@ const ALLOW_LIST = new Set<string>([
   "src/lib/auth/session.ts",          // impersonation-aware getCurrentUser looks up auth.users for the impersonated identity
   "src/lib/billing/actions.ts",       // subscriptions.UPDATE is closed; Checkout/Portal flows need service-role + audit
   "src/app/docs/security/policies/page.tsx", // reads pg_policies via the public v_public_policies view
+  "src/app/print/policies/page.tsx",         // print-friendly mirror of the policy viewer; same v_public_policies read
 ]);
 
 const SCAN_ROOTS = ["src/app", "src/components", "src/lib"];

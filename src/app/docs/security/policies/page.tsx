@@ -54,6 +54,14 @@ export default async function PolicyViewerPage() {
         deployed policies are exactly what these docs claim — no static
         snapshot can drift.
       </p>
+      <p>
+        Need an offline reference?{" "}
+        <a href="/print/policies" target="_blank" rel="noopener noreferrer">
+          Open the printable policy reference
+        </a>
+        {" "}
+        and use File → Print → Save as PDF.
+      </p>
 
       {policies.length === 0 ? (
         <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">

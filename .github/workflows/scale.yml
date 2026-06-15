@@ -1,0 +1,44 @@
+name: scale (nightly)
+
+# Runs the pgtap scale suite (~100k tasks, ~1000 memberships) every night
+# on main. Kept off per-PR CI because the fixture seed adds ~30s and the
+# whole point is volume — flaky timings would punish unrelated PRs.
+#
+# To run locally:
+#   npx supabase start
+#   npx supabase test db supabase/tests/scale/01_fixture.sql \
+#                        supabase/tests/scale/02_policy_cost.sql
+
+on:
+  schedule:
+    - cron: "17 7 * * *"  # 07:17 UTC daily (off-peak so the runner pool is fresh)
+  workflow_dispatch:       # also allow manual invocation from the Actions tab
+
+jobs:
+  scale:
+    name: pgtap scale suite (100k rows)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Cache Supabase Docker images
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/supabase
+          key: supabase-cli-${{ hashFiles('package-lock.json') }}
+      - run: npm ci
+      - name: Start local Supabase stack
+        run: npx supabase start
+        timeout-minutes: 15
+      - name: Run pgtap scale suite
+        run: |
+          npx supabase test db \
+            supabase/tests/scale/01_fixture.sql \
+            supabase/tests/scale/02_policy_cost.sql
+      - name: Stop the stack
+        if: always()
+        run: npx supabase stop
