@@ -16,7 +16,8 @@
     "supabase:reset": "supabase db reset",
     "supabase:test": "supabase test db",
     "supabase:status": "supabase status",
-    "postclone": "./scripts/postclone.sh"
+    "postclone": "./scripts/postclone.sh",
+    "deploy": "shipyard deploy shipyard.yaml"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

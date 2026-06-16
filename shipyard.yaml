@@ -1,0 +1,56 @@
+# Cinderblock — shipyard deploy config.
+#
+# Atomic-symlink-flip deploys to cinderblock.philiprehberger.com.
+# Run from the repo root:
+#
+#   shipyard deploy shipyard.yaml
+#
+# Build is local: npm ci → next build → copy public/static into the
+# standalone tree → tar.gz. Shipyard uploads the tarball, extracts it
+# into /var/www/cinderblock/releases/<ts>/, flips the symlink, and
+# health-checks. PM2 reload picks up the new release on next request.
+#
+# Mirrors the shape of ~/projects/shipyard/shipyard.yaml so both
+# projects' deploy configs read the same.
+
+app: cinderblock
+
+host:
+  ssh: ubuntu@54.190.150.0
+  identity_file: ~/.ssh/ps4_new
+  release_root: /var/www/cinderblock
+
+artifact:
+  source: ./dist/cinderblock-release.tar.gz
+  format: tar.gz
+
+releases:
+  keep: 5
+
+# .env lives in /var/www/cinderblock/shared/.env on the server and is
+# symlinked into every release. Build-time NEXT_PUBLIC_* vars are
+# inlined locally before tar — server-side .env only holds runtime
+# secrets (Supabase keys, etc.).
+shared:
+  files:
+    - .env
+
+health_check:
+  url: https://cinderblock.philiprehberger.com/
+  status: 200
+  retries: 15
+  delay: 3s
+  timeout: 5s
+
+hooks:
+  pre_upload:
+    - npm ci
+    - node .scripts/package.js
+  post_flip:
+    - source ~/.nvm/nvm.sh && pm2 reload cinderblock
+  on_rollback:
+    - source ~/.nvm/nvm.sh && pm2 reload cinderblock
+
+lock:
+  enabled: true
+  ttl: 10m
