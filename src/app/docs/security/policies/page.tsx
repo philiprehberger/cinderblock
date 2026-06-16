@@ -17,6 +17,12 @@ type PolicyRow = {
 export const revalidate = 3600;
 
 async function loadPolicies(): Promise<PolicyRow[]> {
+  // Build-time prerender runs without env vars set. ISR revalidates after
+  // deploy with the deployed env, so an empty render here is correct — the
+  // amber-banner UI below already covers the "no data yet" state.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return [];
+  }
   const service = createServiceRoleClient();
   // pg_policies is in pg_catalog; PostgREST won't expose it through the
   // Data API by default. Use the RPC path with a dedicated helper.
