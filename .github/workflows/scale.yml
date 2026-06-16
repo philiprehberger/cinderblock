@@ -6,7 +6,8 @@ name: scale (nightly)
 #
 # To run locally:
 #   npx supabase start
-#   npx supabase test db supabase/tests/scale/01_fixture.sql \
+#   npx supabase test db supabase/tests/00_setup.sql \
+#                        supabase/tests/scale/01_fixture.sql \
 #                        supabase/tests/scale/02_policy_cost.sql
 
 on:
@@ -37,6 +38,7 @@ jobs:
       - name: Run pgtap scale suite
         run: |
           npx supabase test db \
+            supabase/tests/00_setup.sql \
             supabase/tests/scale/01_fixture.sql \
             supabase/tests/scale/02_policy_cost.sql
       - name: Stop the stack

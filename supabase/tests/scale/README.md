@@ -7,9 +7,15 @@ so the scale suite never runs in the per-PR pgtap job. It runs nightly on
 ```bash
 npx supabase start
 npx supabase test db \
+  supabase/tests/00_setup.sql \
   supabase/tests/scale/01_fixture.sql \
   supabase/tests/scale/02_policy_cost.sql
 ```
+
+`00_setup.sql` defines the `tests.authenticate_as(...)` harness that
+`02_policy_cost.sql` calls. The default per-PR job picks it up via the
+`supabase/tests/*.sql` glob, but the scale invocation lists files
+explicitly and would otherwise fail with `schema "tests" does not exist`.
 
 ## What it proves
 
