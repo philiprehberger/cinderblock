@@ -16,7 +16,7 @@
 app: cinderblock
 
 host:
-  ssh: ubuntu@54.190.150.0
+  ssh: ubuntu@35.80.110.71
   identity_file: ~/.ssh/ps4_new
   release_root: /var/www/cinderblock
 
