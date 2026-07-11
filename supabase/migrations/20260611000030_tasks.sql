@@ -29,6 +29,7 @@ alter table public.tasks enable row level security;
 create policy "tasks_select" on public.tasks
   for select
   using (app_private.is_workspace_member(workspace_id));
+  -- using (true);
 
 -- Members+ can insert; the WITH CHECK keys off workspace membership (the
 -- attacker can lie about workspace_id, but the policy enforces that the

@@ -41,6 +41,24 @@ if (existsSync(resolve(repoRoot, 'public'))) {
   cpSync(resolve(repoRoot, 'public'), standalonePublic, { recursive: true });
 }
 
+// Guard: NEXT_PUBLIC_* are inlined into the bundle at build time. If the
+// build picked up the local-dev Supabase URL (from .env.local) the tenant
+// would ship pointed at 127.0.0.1:54321 and every auth call would fail with
+// "fetch failed". Abort packaging rather than deploy a dead build. Supply
+// production NEXT_PUBLIC_* via .env.production.local (it outranks .env.local).
+try {
+  execSync(`grep -rq "127.0.0.1:54321" ${JSON.stringify(resolve(standalone, '.next'))}`, {
+    cwd: repoRoot,
+  });
+  console.error(
+    '\n✗ Build inlined the local-dev Supabase URL (127.0.0.1:54321).\n' +
+      '  Set production NEXT_PUBLIC_* in .env.production.local before packaging.\n',
+  );
+  process.exit(1);
+} catch {
+  // grep exits non-zero when the string is absent — that is the good path.
+}
+
 mkdirSync(distDir, { recursive: true });
 if (existsSync(archive)) rmSync(archive);
 run(`tar -czf ${archive} -C ${standalone} .`);
