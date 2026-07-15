@@ -117,6 +117,16 @@ Deno.serve(async (request) => {
             : session.customer?.id;
         const sub = subId ? await stripe.subscriptions.retrieve(subId) : null;
 
+        // Guard: never let a checkout with a forged metadata.workspace_id rebind
+        // an existing workspace's billing to a different Stripe customer. A
+        // first-time checkout (no prior row) proceeds normally.
+        const { data: prior } = await service
+          .from("subscriptions")
+          .select("stripe_customer_id")
+          .eq("workspace_id", workspaceId)
+          .maybeSingle();
+        if (prior && customerId && prior.stripe_customer_id !== customerId) break;
+
         await service.from("subscriptions").upsert(
           {
             workspace_id: workspaceId,
@@ -151,8 +161,21 @@ Deno.serve(async (request) => {
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        const workspaceId = sub.metadata?.workspace_id;
-        if (!workspaceId) break;
+        // Resolve the workspace from the TRUSTED stored stripe_customer_id ->
+        // workspace_id mapping, NEVER from attacker-controllable payload
+        // metadata. Stripe's signature proves the event is from a Stripe
+        // account holding the signing secret; it does NOT prove which tenant
+        // the customer belongs to. Trusting sub.metadata.workspace_id let any
+        // Stripe-account holder cancel/modify another tenant's subscription.
+        const customerId =
+          typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+        if (!customerId) break;
+        const { data: owning } = await service
+          .from("subscriptions")
+          .select("workspace_id")
+          .eq("stripe_customer_id", customerId)
+          .maybeSingle();
+        if (!owning) break; // unknown customer — no tenant to update
         await service
           .from("subscriptions")
           .update({
@@ -164,7 +187,7 @@ Deno.serve(async (request) => {
             cancel_at_period_end: sub.cancel_at_period_end,
             updated_at: new Date().toISOString(),
           })
-          .eq("workspace_id", workspaceId);
+          .eq("workspace_id", owning.workspace_id);
         handled = true;
         break;
       }
