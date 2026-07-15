@@ -86,15 +86,17 @@ export async function auditLog(input: AuditLogInput): Promise<string> {
   const userAgent = requestHeaders.get("user-agent") ?? null;
 
   const sql = getSql();
+  // Write through the validating definer function (migration 0170) rather than a
+  // direct INSERT: cb_audit_writer no longer holds INSERT on audit_events, so a
+  // compromised writer can't forge a cross-tenant event — the function rejects an
+  // actor with no membership/creator relationship to the workspace.
   const rows = await sql<{ id: string }[]>`
-    insert into public.audit_events
-      (workspace_id, actor_id, impersonator_id, action, target_type, target_id, diff, ip, user_agent)
-    values
-      (${input.workspaceId}, ${actor.actorId}, ${actor.impersonatorId},
-       ${input.action}, ${input.targetType ?? null}, ${input.targetId ?? null},
-       ${input.diff ? sql.json(input.diff as Parameters<typeof sql.json>[0]) : null},
-       ${ip}::inet, ${userAgent})
-    returning id
+    select app_private.write_audit_event(
+      ${input.workspaceId}, ${actor.actorId}, ${actor.impersonatorId},
+      ${input.action}, ${input.targetType ?? null}, ${input.targetId ?? null},
+      ${input.diff ? sql.json(input.diff as Parameters<typeof sql.json>[0]) : null},
+      ${ip}::inet, ${userAgent}
+    ) as id
   `;
   const id = rows[0]?.id;
   if (!id) {
