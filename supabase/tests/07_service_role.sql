@@ -12,7 +12,7 @@
 
 begin;
 
-select plan(4);
+select plan(5);
 
 -- ------------------------------------------------------------------
 -- 1) service_role can read every workspace.
@@ -41,8 +41,10 @@ select cmp_ok(
 reset role;
 
 -- ------------------------------------------------------------------
--- 3) cb_audit_writer has INSERT and NOTHING ELSE on audit_events.
---    Verify via has_table_privilege() against the catalog.
+-- 3) cb_audit_writer has NO direct grant on audit_events (migration 0170).
+--    Writes go through app_private.write_audit_event, which validates the
+--    actor's relationship to the workspace — closing the forgery surface the
+--    old with-check(true) INSERT policy left open.
 -- ------------------------------------------------------------------
 select is(
   array(
@@ -50,8 +52,13 @@ select is(
       from unnest(array['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER']) as privilege
      where has_table_privilege('cb_audit_writer', 'public.audit_events', privilege)
   ),
-  array['INSERT']::text[],
-  'cb_audit_writer grant set on audit_events is exactly {INSERT}'
+  array[]::text[],
+  'cb_audit_writer has NO direct grant on audit_events (writes via the validating definer function)'
+);
+select ok(
+  has_function_privilege('cb_audit_writer',
+    'app_private.write_audit_event(uuid,uuid,uuid,text,text,text,jsonb,inet,text)', 'execute'),
+  'cb_audit_writer can execute the audit-write definer function'
 );
 
 -- ------------------------------------------------------------------

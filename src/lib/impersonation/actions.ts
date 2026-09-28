@@ -189,29 +189,30 @@ export async function verifyStepUpAndImpersonate(
   const hashed = await hashOtp(otp, secret);
   const service = createServiceRoleClient();
 
-  // Look up the pending code by hash + admin + target.
-  const { data: code } = await service
-    .from("step_up_codes")
-    .select("id, expires_at, used_at")
-    .eq("workspace_id", workspace.id)
-    .eq("initiated_by", admin.id)
-    .eq("target_user_id", targetUserId)
-    .eq("purpose", "impersonation")
-    .eq("code_hash", bytesToBytea(hashed))
-    .is("used_at", null)
-    .maybeSingle();
+  // Verify the code atomically, counting failures and burning the code after
+  // too many wrong guesses (migration 0160). Without a cap, the 6-digit OTP is
+  // brute-forceable within its TTL and success mints a 60-minute impersonation
+  // token. The RPC finds the pending code, compares the hash under a row lock,
+  // increments attempts on a miss, and burns the code at the cap.
+  const { data: status } = await service.rpc("verify_step_up_code", {
+    _workspace_id: workspace.id,
+    _initiated_by: admin.id,
+    _target_user_id: targetUserId,
+    _purpose: "impersonation",
+    _code_hash: bytesToBytea(hashed),
+    _max_attempts: 5,
+  });
 
-  if (!code) {
-    backWithError(slug, targetUserId, "invalid_or_used_otp");
+  if (status === "locked") {
+    backWithError(slug, targetUserId, "too_many_attempts");
   }
-  if (new Date(code.expires_at).getTime() < Date.now()) {
+  if (status === "expired") {
     backWithError(slug, targetUserId, "expired_otp");
   }
-
-  await service
-    .from("step_up_codes")
-    .update({ used_at: new Date().toISOString() })
-    .eq("id", code.id);
+  if (status !== "ok") {
+    // 'bad_code' | 'no_code' | null (rpc error)
+    backWithError(slug, targetUserId, "invalid_or_used_otp");
+  }
 
   // Mint the impersonation JWT. sub=target; aud='impersonation';
   // app_metadata.impersonated_by=admin; 60-min exp. PostgREST accepts this

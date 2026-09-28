@@ -95,50 +95,44 @@ Deno.serve(async (request) => {
     return json({ error: "email_mismatch" }, 403, request);
   }
 
-  // 6. Idempotency: if the user is already a member of this workspace, mark
-  // the invitation accepted and return success. This handles the case where
-  // the recipient clicks the link twice.
-  const { data: existingMember } = await service
-    .from("workspace_members")
-    .select("user_id")
-    .eq("workspace_id", invitation.workspace_id)
-    .eq("user_id", accepted_by_user_id)
-    .is("removed_at", null)
-    .maybeSingle();
+  // 6. Insert the membership, or reactivate a soft-removed one, in ONE atomic
+  // statement (migration 0150). A bare insert dead-ends on the composite PK for
+  // a previously-removed member (they could never be re-invited); the RPC
+  // reactivates only soft-removed rows and never re-roles an ACTIVE member.
+  // 'already_member' means the row is already active (idempotent double-click).
+  const { data: outcome, error: memberError } = await service.rpc("accept_invite_member", {
+    _workspace_id: invitation.workspace_id,
+    _user_id: accepted_by_user_id,
+    _role: invitation.role,
+  });
 
-  if (existingMember) {
+  if (memberError) {
+    // The seat-cap / last-owner triggers raise check_violation (23514).
+    if (memberError.code === "23514") {
+      return json({ error: "limit_reached", detail: memberError.message }, 409, request);
+    }
+    return json({ error: "member_insert_failed", detail: memberError.message }, 500, request);
+  }
+
+  if (outcome === "already_member") {
+    // Already an active member (double-click). Mark the invite accepted and
+    // return the member's real current role — never a silent re-role.
+    const { data: current } = await service
+      .from("workspace_members")
+      .select("role")
+      .eq("workspace_id", invitation.workspace_id)
+      .eq("user_id", accepted_by_user_id)
+      .is("removed_at", null)
+      .maybeSingle();
     await service
       .from("workspace_invitations")
       .update({ accepted_at: new Date().toISOString(), accepted_by: accepted_by_user_id })
       .eq("id", invitation.id)
       .is("accepted_at", null);
     return json(
-      { workspace_id: invitation.workspace_id, role: existingMember ? "(already a member)" : invitation.role },
+      { workspace_id: invitation.workspace_id, role: current?.role ?? invitation.role, already_member: true },
       200, request,
     );
-  }
-
-  // The actual write. supabase-js can't express serializable transactions,
-  // but the workspace_members.INSERT policy is closed (`with check (false)`)
-  // and we're running as service-role, so the membership INSERT can't be
-  // raced from another caller — the only other writer would also be running
-  // through this Edge Function. Race protection between two parallel
-  // invite-accept calls for the same (workspace, user) is via the composite
-  // PK on workspace_members (workspace_id, user_id) — second INSERT trips
-  // 23505 which we surface as already_member.
-  const { error: memberError } = await service
-    .from("workspace_members")
-    .insert({
-      workspace_id: invitation.workspace_id,
-      user_id: accepted_by_user_id,
-      role: invitation.role,
-    });
-
-  if (memberError) {
-    if (memberError.code === "23505") {
-      return json({ error: "already_member" }, 409, request);
-    }
-    return json({ error: "member_insert_failed", detail: memberError.message }, 500, request);
   }
 
   const { error: updateError } = await service
