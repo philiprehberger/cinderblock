@@ -7,7 +7,7 @@ Most Supabase multi-tenant deliveries trust the client to send the right tenant 
 ## What you get
 
 - Workspace + member + role + invite + audit + billing data model on Postgres.
-- 103 pgtap tests against a hostile fixture (5 workspaces × 8 users × every role × every table). Cross-tenant attempts return 0 rows; the tests fail loudly if a single row leaks through.
+- 109 pgtap tests against a hostile fixture (5 workspaces × 8 users × every role × every table). Cross-tenant attempts return 0 rows; the tests fail loudly if a single row leaks through.
 - Magic-link + Google OAuth + TOTP MFA on owners.
 - Admin impersonation with a 60-minute server-minted HS256 JWT, step-up auth on entry, and double-logged audit events.
 - Stripe Checkout + Customer Portal wired in test mode with insert-first webhook idempotency. Seat enforcement deferred trigger. Past-due grace + canceled read-only modes.

@@ -50,5 +50,5 @@ without interference.
 The fixture seed is ~30s on a cold Postgres and the assertions are
 timing-sensitive in spirit (even though the only hard assertion is the
 plan shape). Punishing unrelated PRs with that noise is the wrong
-trade-off — the headline correctness suite is the 103-test default that
+trade-off — the headline correctness suite is the default that
 runs in seconds.

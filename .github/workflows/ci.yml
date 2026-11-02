@@ -22,7 +22,7 @@ jobs:
       - run: npm test
 
   pgtap:
-    name: Supabase — pgtap (103 tests)
+    name: Supabase — pgtap (109 tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

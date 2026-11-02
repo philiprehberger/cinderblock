@@ -19,12 +19,12 @@ export const metadata: Metadata = {
     template: "%s · Cinderblock",
   },
   description:
-    "Most Supabase multi-tenant deliveries leak. Cinderblock doesn't — and the 103-test pgtap suite proves it. Forkable template, live policy viewer, doubly-logged impersonation.",
+    "Most Supabase multi-tenant deliveries leak. Cinderblock doesn't — and the 109-test pgtap suite proves it. Forkable template, live policy viewer, doubly-logged impersonation.",
   metadataBase: new URL("https://cinderblock.philiprehberger.com"),
   openGraph: {
     title: "Cinderblock — multi-tenant Supabase starter",
     description:
-      "103 pgtap tests against a hostile 5×8 fixture. Append-only audit at the grant level. Doubly-logged impersonation. Forkable template.",
+      "109 pgtap tests against a hostile 5×8 fixture. Append-only audit at the grant level. Doubly-logged impersonation. Forkable template.",
     url: "https://cinderblock.philiprehberger.com",
     siteName: "Cinderblock",
     type: "website",
