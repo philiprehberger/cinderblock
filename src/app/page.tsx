@@ -70,7 +70,7 @@ export default async function Home(props: {
           <h2 className="text-xl font-semibold">What's in the box</h2>
           <ul className="mt-4 grid grid-cols-1 gap-3 text-sm leading-6 text-zinc-700 dark:text-zinc-300 sm:grid-cols-2">
             <li>Workspace + member + role data model</li>
-            <li>74 pgtap policy tests against a 5×8 hostile fixture</li>
+            <li>109 pgtap tests against a 5×8 hostile fixture</li>
             <li>Magic-link auth + TOTP MFA for owners</li>
             <li>Admin impersonation with 60-min server-minted JWT</li>
             <li>Append-only audit log via a single-purpose Postgres role</li>

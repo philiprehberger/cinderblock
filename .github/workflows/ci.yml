@@ -22,7 +22,7 @@ jobs:
       - run: npm test
 
   pgtap:
-    name: Supabase — pgtap (~74 tests)
+    name: Supabase — pgtap (109 tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,7 +47,7 @@ jobs:
 
   e2e:
     name: Playwright — public-routes smoke
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

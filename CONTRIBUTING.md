@@ -12,7 +12,7 @@ cd cinderblock
 npm install
 npx supabase start                # 10-15 min cold, ~45s warm
 ./scripts/setup-roles.sh          # generates cb_audit_writer + cb_impersonator passwords
-npx supabase test db              # 74 tests should pass
+npx supabase test db              # 109 tests should pass
 npm run dev
 ```
 
@@ -23,7 +23,7 @@ Every push and PR:
 - `npx tsc --noEmit` — strict TypeScript
 - `npm run lint` — ESLint via `eslint-config-next`
 - `npm test` — Vitest (unit + firewall scan)
-- `npx supabase test db` — the full pgtap suite (74 tests)
+- `npx supabase test db` — the full pgtap suite (109 tests)
 - `npx playwright test e2e/public-routes.spec.ts` — public-routes smoke
 
 The cross-tenant Playwright suite runs locally only — it needs a full
@@ -64,7 +64,7 @@ Voice across the codebase + docs:
 
 - Lead with diagnosis, not pitch. Name what's actually wrong or unknown
   before describing what you'd do.
-- Concrete numbers over adjectives — "74 tests", "60-minute TTL", "5
+- Concrete numbers over adjectives — "109 tests", "60-minute TTL", "5
   minute warm cache" — not "comprehensive" or "robust."
 - No emoji, no exclamation points, no AI attribution in commits or code.
 - Match the surrounding tone exactly when editing existing prose.
